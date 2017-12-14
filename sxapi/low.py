@@ -11,6 +11,9 @@ from .models import HDict
 from .helper import splitTimeRange
 
 
+PUBLIC_API = "https://api.smaxtec.com/api/v1"
+
+
 class Req(object):
     def __init__(self, url, status, start, end=None):
         self.url = url
@@ -26,11 +29,11 @@ class Req(object):
         return self.end - self.start
 
 
-class LowLevelAPI(object):
-    def __init__(self, email=None, password=None, api_key=None):
-        """Initialize a new low level API client instance.
+class BaseAPI(object):
+    def __init__(self, base_url, email=None, password=None, api_key=None):
+        """Initialize a new base low level API client instance.
         """
-        self.api_base_url = "https://api.smaxtec.com/api/v1"
+        self.api_base_url = base_url.rstrip("/")
         self.email = email
         self.password = password
         self.api_key = api_key
@@ -110,8 +113,10 @@ class LowLevelAPI(object):
     def post(self, path, *args, **kwargs):
         url = self.to_url(path)
         start = time.time()
-        r = self.session.post(url, *args, **kwargs)
+        r = self.session.post(url, *args, allow_redirects=False, **kwargs)
         self.track_request(url, r.status_code, start)
+        if r.status_code == 301:
+            raise HTTPError("301 redirect for POST")
         if 400 <= r.status_code < 500:
             raise HTTPError("{} Error: {}".format(r.status_code, r.json().get("message", "unknown")))
         r.raise_for_status()
@@ -120,12 +125,31 @@ class LowLevelAPI(object):
     def put(self, path, *args, **kwargs):
         url = self.to_url(path)
         start = time.time()
-        r = self.session.put(url, *args, **kwargs)
+        r = self.session.put(url, *args, allow_redirects=False, **kwargs)
+        self.track_request(url, r.status_code, start)
+        if r.status_code == 301:
+            raise HTTPError("301 redirect for PUT")
+        if 400 <= r.status_code < 500:
+            raise HTTPError("{} Error: {}".format(r.status_code, r.json().get("message", "unknown")))
+        r.raise_for_status()
+        return r.json()
+
+    def delete(self, path, *args, **kwargs):
+        url = self.to_url(path)
+        start = time.time()
+        r = self.session.delete(url, *args, **kwargs)
         self.track_request(url, r.status_code, start)
         if 400 <= r.status_code < 500:
             raise HTTPError("{} Error: {}".format(r.status_code, r.json().get("message", "unknown")))
         r.raise_for_status()
         return r.json()
+
+
+class LowLevelAPI(BaseAPI):
+    def __init__(self, email=None, password=None, api_key=None):
+        """Initialize a new low level API client instance.
+        """
+        super(LowLevelAPI, self).__init__(PUBLIC_API, email=email, password=password, api_key=api_key)
 
     def get_status(self):
         return self.get("/service/status")
@@ -206,3 +230,213 @@ class LowLevelAPI(object):
             else:
                 params["offset"] = events["pagination"]["next_offset"]
         return all_events
+
+    # def getAnimalIdsForOrganisation(self, organisation_id):
+    #     p = {"organisation_id": organisation_id}
+    #     res = self._get("animal/ids_by_organisation", api_type='public',
+    #                     params=p)
+    #     return res
+
+    # def getAnimalsForOrganisation(self, organisation_id):
+    #     p = {"organisation_id": organisation_id}
+    #     res = self._get("animal/by_organisation", api_type='public',
+    #                     params=p, timeout=20)
+    #     return res
+
+    # def getDeviceEventList(self, device_id, from_date, to_date):
+    #     p = {"device_id": device_id, "offset": 0, "limit": 100,
+    #          "from_date": int(from_date), "to_date": int(to_date)}
+    #     res = []
+    #     while True:
+    #         it = self._get("event/query", api_type='public',
+    #                        params=p)
+    #         res += it["data"]
+    #         if len(it["data"]) < p["limit"]:
+    #             break
+    #         p["offset"] += p["limit"]
+    #     return res
+
+    # def getAnimalEventList(self, animal_id, from_date, to_date):
+    #     p = {"animal_id": animal_id, "offset": 0, "limit": 100,
+    #          "from_date": int(from_date), "to_date": int(to_date)}
+    #     res = []
+    #     while True:
+    #         it = self._get("event/query", api_type='public',
+    #                        params=p)
+    #         res += it["data"]
+    #         if len(it["data"]) < p["limit"]:
+    #             break
+    #         p["offset"] += p["limit"]
+    #     return res
+
+
+class LowLevelInternAPI(BaseAPI):
+    def __init__(self, endpoint, api_key=None):
+        """Initialize a new low level intern API client instance.
+        """
+        super(LowLevelInternAPI, self).__init__(endpoint, api_key=api_key)
+
+    def _api_status(self):
+        res = self.get("/", params={"foo": "bar"})
+        return res
+
+    def healthy(self):
+        try:
+            assert(self._api_status())
+        except Exception as e:
+            logging.error("Status Not Ok: %s", e)
+            return False
+        else:
+            return True
+
+    def insertSensorData(self, device_id, metric, data):
+        d = [{"device_id": device_id, "metric": metric,
+              "data": list(data)}]
+        return self.insertSensorDataBulk(d)[0]
+
+    def insertSensorDataBulk(self, sensordata):
+        data = HDict({"sensordata": list(sensordata)})
+        for s in sensordata:
+            d = s["data"]
+            for point in d:
+                if not isinstance(point[0], (int, float)):
+                    raise ValueError("Invalid TS Point: %s of metric %s",
+                                     (point, s["metric"]))
+                if not isinstance(point[1], (int, float)):
+                    raise ValueError("Invalid VALUE Point: %s of metric %s",
+                                     (point, s["metric"]))
+        res = self.put("/sensordatabulk", json=data, timeout=25)
+        return res
+
+    def updateSensorData(self, device_id, metric, data):
+        d = [{"device_id": device_id, "metric": metric,
+              "data": list(data)}]
+        return self.updateSensorDataBulk(d)[0]
+
+    def updateSensorDataBulk(self, sensordata):
+        data = HDict({"sensordata": list(sensordata)})
+        for s in sensordata:
+            d = s["data"]
+            for point in d:
+                if not isinstance(point[0], (int, float)):
+                    raise ValueError("Invalid TS Point: %s", point)
+                if not isinstance(point[1], (int, float)):
+                    raise ValueError("Invalid VALUE Point: %s", point)
+        res = self.post("/sensordatabulk", json=data, timeout=25)
+        return res
+
+    def getSensorData(self, device_id, metric, from_date, to_date):
+        return self.getSensorDataBulk(device_id, [metric],
+                                      from_date, to_date)[0]
+
+    def getSensorDataRange(self, device_id, metric):
+        params = HDict({"device_id": device_id, "metric": metric})
+        res = self.get("/sensordatarange", params=params)
+        return res
+
+    def getSensorDataBulk(self, device_id, metrics, from_date, to_date):
+        params = HDict({"device_id": device_id, "metrics": list(metrics),
+                        "from_date": from_date, "to_date": to_date})
+        res = self.get("/sensordatabulk", params=params, timeout=15)
+        return res
+
+    def getLastSensorData(self, device_id, metric):
+        return self.getLastSensorDataBulk(device_id, [metric])[0]
+
+    def getLastSensorDataBulk(self, device_id, metrics):
+        params = HDict({"device_id": device_id, "metrics": list(metrics)})
+        res = self.get("/lastsensordata", params=params)
+        return res
+
+    def insertEvent(self, device_id, event_type, timestamp, value,
+                    metadata, level=10, disable_notifications=False):
+        hooks = 1 if disable_notifications else 0
+        metadata["value"] = value
+        p = HDict({"device_id": device_id, "metadata": dict(metadata),
+                   "event_type": event_type, "level": level,
+                   "timestamp": timestamp, "disable_hooks": hooks})
+        res = self.put("/event", json=p)
+        return res
+
+    def updateEventMeta(self, device_id, _id, event_meta):
+        p = HDict({"event_id": _id, "metadata": event_meta})
+        res = self.post("/event", json=p)
+        return res
+
+    def getLastEventTimestamps(self, device_id):
+        p = HDict({"device_id": device_id})
+        res = self.get("/lasteventtimestamps", params=p)
+        return res
+
+    def setDeviceMeta(self, device_id, metadata):
+        p = HDict({"device_id": device_id, "metadata": dict(metadata),
+                   "namespace": "anthill"})
+        res = self.post("/devicemetadata", json=p)
+        return res
+
+    def getSensorInfo(self, device_id):
+        p = HDict({"device_id": device_id})
+        res = self.get("/sensorinfo", params=p)
+        return res
+
+    def deleteEvent(self, event_id):
+        p = HDict({"event_id": event_id})
+        res = self.delete("/event", params=p)
+        return res
+
+    def getDevice(self, device_id, with_animal=True, with_organisation=True,
+                  with_allmeta=True):
+        data = HDict({"device_id": device_id,
+                      "with_animal": 1 if with_animal else 0,
+                      "with_organisation": 1 if with_organisation else 0,
+                      "with_allmeta": 1 if with_allmeta else 0})
+        res = self.get("/device", params=data)
+        return res
+
+    def getOrganisation(self, organisation_id):
+        p = HDict({"organisation_id": organisation_id})
+        res = self.get("/organisation", params=p)
+        return res
+
+    # def getAnimalIdsForOrganisation(self, organisation_id):
+    #     p = {"organisation_id": organisation_id}
+    #     res = self._get("animal/ids_by_organisation", api_type='public',
+    #                     params=p)
+    #     return res
+
+    # def getAnimalsForOrganisation(self, organisation_id):
+    #     p = {"organisation_id": organisation_id}
+    #     res = self._get("animal/by_organisation", api_type='public',
+    #                     params=p, timeout=20)
+    #     return res
+
+    def getAnimal(self, animal_id):
+        p = HDict({"animal_id": animal_id})
+        res = self.get("/animal", params=p)
+        return res
+
+    # def getDeviceEventList(self, device_id, from_date, to_date):
+    #     p = {"device_id": device_id, "offset": 0, "limit": 100,
+    #          "from_date": int(from_date), "to_date": int(to_date)}
+    #     res = []
+    #     while True:
+    #         it = self._get("event/query", api_type='public',
+    #                        params=p)
+    #         res += it["data"]
+    #         if len(it["data"]) < p["limit"]:
+    #             break
+    #         p["offset"] += p["limit"]
+    #     return res
+
+    # def getAnimalEventList(self, animal_id, from_date, to_date):
+    #     p = {"animal_id": animal_id, "offset": 0, "limit": 100,
+    #          "from_date": int(from_date), "to_date": int(to_date)}
+    #     res = []
+    #     while True:
+    #         it = self._get("event/query", api_type='public',
+    #                        params=p)
+    #         res += it["data"]
+    #         if len(it["data"]) < p["limit"]:
+    #             break
+    #         p["offset"] += p["limit"]
+    #     return res
