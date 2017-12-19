@@ -82,7 +82,7 @@ class BaseAPI(object):
         if self.api_key:
             self._session_key = self.api_key
             self._session.headers.update({"Authorization": "Bearer {}".format(self._session_key)})
-            self._session_expiration = time.time() + 30 * 24 * 60 * 60
+            self._session_expiration = time.time() + 365 * 24 * 60 * 60
             return True
         # login with credentials
         if self.email is None or self.password is None:
@@ -146,10 +146,11 @@ class BaseAPI(object):
 
 
 class LowLevelAPI(BaseAPI):
-    def __init__(self, email=None, password=None, api_key=None):
+    def __init__(self, email=None, password=None, api_key=None, endpoint=None):
         """Initialize a new low level API client instance.
         """
-        super(LowLevelAPI, self).__init__(PUBLIC_API, email=email, password=password, api_key=api_key)
+        ep = endpoint or PUBLIC_API
+        super(LowLevelAPI, self).__init__(ep, email=email, password=password, api_key=api_key)
 
     def get_status(self):
         return self.get("/service/status")
@@ -231,50 +232,17 @@ class LowLevelAPI(BaseAPI):
                 params["offset"] = events["pagination"]["next_offset"]
         return all_events
 
-    # def getAnimalIdsForOrganisation(self, organisation_id):
-    #     p = {"organisation_id": organisation_id}
-    #     res = self._get("animal/ids_by_organisation", api_type='public',
-    #                     params=p)
-    #     return res
-
-    # def getAnimalsForOrganisation(self, organisation_id):
-    #     p = {"organisation_id": organisation_id}
-    #     res = self._get("animal/by_organisation", api_type='public',
-    #                     params=p, timeout=20)
-    #     return res
-
-    # def getDeviceEventList(self, device_id, from_date, to_date):
-    #     p = {"device_id": device_id, "offset": 0, "limit": 100,
-    #          "from_date": int(from_date), "to_date": int(to_date)}
-    #     res = []
-    #     while True:
-    #         it = self._get("event/query", api_type='public',
-    #                        params=p)
-    #         res += it["data"]
-    #         if len(it["data"]) < p["limit"]:
-    #             break
-    #         p["offset"] += p["limit"]
-    #     return res
-
-    # def getAnimalEventList(self, animal_id, from_date, to_date):
-    #     p = {"animal_id": animal_id, "offset": 0, "limit": 100,
-    #          "from_date": int(from_date), "to_date": int(to_date)}
-    #     res = []
-    #     while True:
-    #         it = self._get("event/query", api_type='public',
-    #                        params=p)
-    #         res += it["data"]
-    #         if len(it["data"]) < p["limit"]:
-    #             break
-    #         p["offset"] += p["limit"]
-    #     return res
-
 
 class LowLevelInternAPI(BaseAPI):
     def __init__(self, endpoint, api_key=None):
         """Initialize a new low level intern API client instance.
         """
+        if not endpoint:
+            raise ValueError("Endpoint needed for low level API")
         super(LowLevelInternAPI, self).__init__(endpoint, api_key=api_key)
+
+    def get_status(self):
+        return self._api_status()
 
     def _api_status(self):
         res = self.get("/", params={"foo": "bar"})
@@ -398,45 +366,7 @@ class LowLevelInternAPI(BaseAPI):
         res = self.get("/organisation", params=p)
         return res
 
-    # def getAnimalIdsForOrganisation(self, organisation_id):
-    #     p = {"organisation_id": organisation_id}
-    #     res = self._get("animal/ids_by_organisation", api_type='public',
-    #                     params=p)
-    #     return res
-
-    # def getAnimalsForOrganisation(self, organisation_id):
-    #     p = {"organisation_id": organisation_id}
-    #     res = self._get("animal/by_organisation", api_type='public',
-    #                     params=p, timeout=20)
-    #     return res
-
     def getAnimal(self, animal_id):
         p = HDict({"animal_id": animal_id})
         res = self.get("/animal", params=p)
         return res
-
-    # def getDeviceEventList(self, device_id, from_date, to_date):
-    #     p = {"device_id": device_id, "offset": 0, "limit": 100,
-    #          "from_date": int(from_date), "to_date": int(to_date)}
-    #     res = []
-    #     while True:
-    #         it = self._get("event/query", api_type='public',
-    #                        params=p)
-    #         res += it["data"]
-    #         if len(it["data"]) < p["limit"]:
-    #             break
-    #         p["offset"] += p["limit"]
-    #     return res
-
-    # def getAnimalEventList(self, animal_id, from_date, to_date):
-    #     p = {"animal_id": animal_id, "offset": 0, "limit": 100,
-    #          "from_date": int(from_date), "to_date": int(to_date)}
-    #     res = []
-    #     while True:
-    #         it = self._get("event/query", api_type='public',
-    #                        params=p)
-    #         res += it["data"]
-    #         if len(it["data"]) < p["limit"]:
-    #             break
-    #         p["offset"] += p["limit"]
-    #     return res

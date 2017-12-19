@@ -35,3 +35,43 @@ print a.get_animal("572209c1a80a5f54c631513f").lactations
 # Show request stats
 a.print_stats()
 ```
+
+## Flask Usage ##
+The API Client includes a Flask Extension Module for usage of the LowLevel API.
+Usage is only possible with a permanent API Token and an internal endpoint.
+
+```
+from flask import Flask, jsonify
+from sxapi.ext import FlaskSX
+
+class MYCONFIG(object):
+    DEBUG = True
+    TESTING = True
+    SMAXTEC_API_PUBLIC_ENDPOINT = "http://mypublicapi.smaxtec.com/api/v1"
+    SMAXTEC_API_PRIVATE_ENDPOINT = "http://127.0.0.1:8787/internapi/v0"
+    SMAXTEC_API_KEY = "...JWT..."
+
+app = Flask(__name__)
+app.config.from_object(MYCONFIG)
+api = FlaskSX()
+api.init_app(app)
+
+# Example Id: 0700003445
+@app.route('/device/<string:device_id>')
+def show_device(device_id):
+    return jsonify(api.get_device_by_id(device_id))
+
+# Example Id: 59f0743b093ed5cab7a1fb18
+@app.route('/animal/<string:animal_id>')
+def show_animal(animal_id):
+    return jsonify(api.get_animal_by_id(animal_id))
+
+@app.route('/')
+def show_home():
+    public = api.get_public_status()
+    private = api.get_private_status()
+    return jsonify({"public": public, "private": private})
+
+if __name__ == "__main__":
+    app.run()
+```
