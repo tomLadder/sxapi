@@ -399,7 +399,7 @@ class Annotation(APIObject):
         super(Annotation, self).__init__(api, _id)
 
     def get_data(self):
-        return self.api.get_annotation(self._id)
+        return self.api.get_annotation_by_id(self._id)
 
     @property
     def end_timestamp(self):

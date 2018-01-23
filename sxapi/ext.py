@@ -7,7 +7,7 @@ from requests.exceptions import HTTPError
 from flask import current_app
 from flask import _app_ctx_stack as stack
 
-from . import API, InternAPI
+from . import API, LowLevelAPI
 
 
 logger = logging.getLogger(__name__)
@@ -69,9 +69,11 @@ class FlaskSX(object):
         ctx = stack.top
         if ctx is not None:
             if not hasattr(ctx, 'sx_low'):
-                ctx.sx_low = InternAPI(endpoint=current_app.config["SMAXTEC_API_PRIVATE_ENDPOINT"],
-                                       api_key=current_app.config["SMAXTEC_API_KEY"],
-                                       public_endpoint=current_app.config["SMAXTEC_API_PUBLIC_ENDPOINT"])
+                ctx.sx_low = LowLevelAPI(private_endpoint=current_app.config["SMAXTEC_API_PRIVATE_ENDPOINT"],
+                                         password=current_app.config["SMAXTEC_API_PASSWORD"],
+                                         email=current_app.config["SMAXTEC_API_EMAIL"],
+                                         api_key=current_app.config["SMAXTEC_API_KEY"],
+                                         public_endpoint=current_app.config["SMAXTEC_API_PUBLIC_ENDPOINT"])
             return ctx.sx_low
         raise RuntimeError("No App Context")
 

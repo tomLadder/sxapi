@@ -36,6 +36,20 @@ print a.get_animal("572209c1a80a5f54c631513f").lactations
 a.print_stats()
 ```
 
+## Low Level Usage ##
+
+```
+from sxapi import LowLevelAPI
+
+a = LowLevelAPI(email="user@smaxtec.com", password="mypassword")
+
+# Get by id
+print a.get_organisation_by_id("5721e3f8a80a5f54c6315131")
+print a.get_animal_by_id("572209c1a80a5f54c631513f")
+print a.getAnimal("dsdsd") # from internal
+```
+
+
 ## Flask Usage ##
 The API Client includes a Flask Extension Module for usage of the LowLevel API.
 Usage is only possible with a permanent API Token and an internal endpoint.

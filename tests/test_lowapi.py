@@ -204,3 +204,44 @@ class LowApiTests(unittest.TestCase):
             self.assertTrue(call[0][0][0].endswith("sensordatarange"))
             self.assertEqual(call[0][1]["params"]["device_id"], "1234567890")
             self.assertEqual(call[0][1]["params"]["metric"], "act")
+
+    def test_annotation(self):
+        sxapi = InternAPI(endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
+        with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
+            sxapi.get_annotation_definitions()
+            call = patched_session.get.call_args_list
+            self.assertTrue(call[0][0][0].endswith("/annotation/definition"))
+
+        with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
+            sxapi.get_annotation("myannoid")
+            call = patched_session.get.call_args_list
+            self.assertTrue(call[0][0][0].endswith("/annotation/id"))
+            self.assertEqual(call[0][1]["params"]["annotation_id"], "myannoid")
+
+        with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
+            sxapi.get_annotations_by_class("health", 1480773600, 1480773610)
+            call = patched_session.get.call_args_list
+            self.assertTrue(call[0][0][0].endswith("/annotation/query"))
+            self.assertEqual(call[0][1]["params"]["annotation_class"], "health")
+            self.assertEqual(call[0][1]["params"]["from_date"], 1480773600)
+            self.assertEqual(call[0][1]["params"]["to_date"], 1480773610)
+            self.assertEqual(call[0][1]["params"]["offset"], 0)
+
+        with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
+            sxapi.get_animal_annotations("myanimal", 1480773600, 1480773610)
+            call = patched_session.get.call_args_list
+            self.assertTrue(call[0][0][0].endswith("/annotation/query"))
+            self.assertEqual(call[0][1]["params"]["animal_id"], "myanimal")
+            self.assertEqual(call[0][1]["params"]["from_date"], 1480773600)
+            self.assertEqual(call[0][1]["params"]["to_date"], 1480773610)
+            self.assertEqual(call[0][1]["params"]["offset"], 0)
+
+        with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
+            sxapi.insert_animal_annotation("myanimal", 34, 35, ["health", "desease"], [{"foo": "bar"}])
+            call = patched_session.put.call_args_list
+            self.assertTrue(call[0][0][0].endswith("/annotation/animal"))
+            self.assertEqual(call[0][1]["json"]["animal_id"], "myanimal")
+            self.assertEqual(call[0][1]["json"]["ts"], 34)
+            self.assertEqual(call[0][1]["json"]["end_ts"], 35)
+            self.assertEqual(call[0][1]["json"]["classes"], ["health", "desease"])
+            self.assertEqual(call[0][1]["json"]["attributes"], [{"foo": "bar"}])

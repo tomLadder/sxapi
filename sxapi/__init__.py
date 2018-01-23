@@ -1,14 +1,14 @@
 #!/usr/bin/python
 # coding: utf8
 
-__version__ = '0.7'
+__version__ = '0.8'
 
 
 import time
 import logging
 import requests
 
-from .low import LowLevelAPI, LowLevelInternAPI
+from .low import LowLevelPublicAPI, LowLevelInternAPI
 from .models import User, Animal, Organisation, Annotation
 from .helper import fromTS, toTS
 
@@ -16,7 +16,7 @@ class API(object):
     def __init__(self, email=None, password=None, api_key=None, endpoint=None):
         """Initialize a new API client instance.
         """
-        self.low = LowLevelAPI(email=email, password=password, api_key=api_key, endpoint=endpoint)
+        self.low = LowLevelPublicAPI(email=email, password=password, api_key=api_key, endpoint=endpoint)
 
     @property
     def status(self):
@@ -28,41 +28,38 @@ class API(object):
 
     @property
     def user(self):
-        return User(api=self.low, data=self.low.get_user())        
+        return User(api=self.low, data=self.low.get_user())
 
     @property
     def organisations(self):
         return [Organisation.create_from_data(api=self.low, data=x, _id=x["organisation_id"]) 
-                for x in self.low.get_organisations()]
-    
-    @property
-    def annotation_definitions(self):
-        return self.low.get_annotation_definition()
+            for x in self.low.get_organisations()]
 
     def get_annotation(self, annotation_id):
-        return Annotation(api= self.low, _id = annotation_id)
-    
+        return Annotation(api=self.low, _id=annotation_id)
+
     def get_animal(self, animal_id):
         return Animal(api=self.low, _id=animal_id)
 
     def get_organisation(self, organisation_id):
         return Organisation(api=self.low, _id=organisation_id)
-    
-    def get_annotation_query(self, to_date, from_date, limit,  offset, animal_id = None, organisation_id = None, group_id = None, device_id = None, reference_type= None):
-        return self.low.get_annotation_query(to_date, from_date, limit, offset, animal_id, organisation_id, group_id, device_id, reference_type)
 
-    def insert_annotation(self, animal_id, timestamp, end_ts, classes, attributes):
-        return self.low.insert_annotation(animal_id = animal_id, timestamp = timestamp, end_ts = end_ts, classes = classes, attributes = attributes)
 
-    def update_annotation(self, annotation_id, timestamp, end_ts, classes, attributes):
-        return self.low.update_annotation(annotation_id, timestamp, end_ts, classes, attributes)
-    
-class InternAPI(object):
-    def __init__(self, endpoint, api_key, public_endpoint=None):
+class LowLevelAPI(object):
+    def __init__(self, email=None, password=None, private_endpoint=None, api_key=None, public_endpoint=None):
         """Initialize a new API client instance.
         """
-        self.publiclow = LowLevelAPI(api_key=api_key, endpoint=public_endpoint)
-        self.privatelow = LowLevelInternAPI(endpoint=endpoint, api_key=api_key)
+        self.publiclow = LowLevelPublicAPI(email=email, password=password, api_key=api_key, endpoint=public_endpoint)
+        if private_endpoint is not None and api_key is not None:
+            self.privatelow = LowLevelInternAPI(endpoint=private_endpoint, api_key=api_key)
+        else:
+            pass
+            # self.privatelow = self._privatelow
+            # do something to raise warning
+
+    @property
+    def _privatelow(self):
+        raise RuntimeError("internal API not accessable without endpoint and token")
 
     # Status Calls
 
@@ -189,3 +186,24 @@ class InternAPI(object):
 
     def getAnimal(self, animal_id):
         return self.privatelow.getAnimal(animal_id)
+
+    # Annotation Calls
+
+    def get_annotation_by_id(self, annotation_id):
+        return self.publiclow.get_annotation_by_id(annotation_id)
+
+    def get_annotation_definitions(self):
+        return self.publiclow.get_annotation_definition()
+
+    def get_annotations_by_class(self, annotation_class, from_date, to_date):
+        return self.publiclow.get_annotations_by_class(annotation_class, from_date, to_date)
+
+    def get_animal_annotations(self, animal_id, from_date, to_date):
+        return self.publiclow.get_animal_annotations(animal_id, from_date, to_date)
+
+    def insert_animal_annotation(self, animal_id, ts, end_ts, classes, attributes):
+        return self.publiclow.insert_animal_annotation(animal_id=animal_id, ts=ts,
+                                                       end_ts=end_ts, classes=classes, attributes=attributes)
+
+    def update_annotation(self, annotation_id, ts=None, end_ts=None, classes=None, attributes=None):
+        return self.publiclow.update_annotation(annotation_id, ts, end_ts, classes, attributes)

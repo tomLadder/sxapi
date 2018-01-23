@@ -145,12 +145,12 @@ class BaseAPI(object):
         return r.json()
 
 
-class LowLevelAPI(BaseAPI):
+class LowLevelPublicAPI(BaseAPI):
     def __init__(self, email=None, password=None, api_key=None, endpoint=None):
         """Initialize a new low level API client instance.
         """
         ep = endpoint or PUBLIC_API
-        super(LowLevelAPI, self).__init__(ep, email=email, password=password, api_key=api_key)
+        super(LowLevelPublicAPI, self).__init__(ep, email=email, password=password, api_key=api_key)
 
     def get_status(self):
         return self.get("/service/status")
@@ -232,31 +232,58 @@ class LowLevelAPI(BaseAPI):
                 params["offset"] = events["pagination"]["next_offset"]
         return all_events
     
-    def get_annotation(self, annotation_id):
+    def get_annotation_by_id(self, annotation_id):
         params = HDict({"annotation_id": annotation_id})
         return self.get("/annotation/id", params= params)
 
-    def get_annotation_query(self, to_date, from_date, limit, offset, animal_id, organisation_id = None, group_id = None, device_id = None, annotation_class= None):
-        params = HDict({"to_date": to_date, "from_date": from_date, "limit": limit,
-                        "offset": offset, "animal_id": animal_id, "organisation_id": organisation_id,
-                        "group_id": group_id, "device_id": device_id ,"annotation_class": annotation_class,
-                        })
-        return self.get("/annotation/query", params= params)
+    def get_animal_annotations(self, animal_id, from_date, to_date):
+        params = HDict({"to_date": to_date, "from_date": from_date, "limit": 100,
+                        "offset": 0, "animal_id": animal_id})
+        all_annotations = []
+        while True:
+            annotations = self.get("/annotation/query", params=params)
+            all_annotations += annotations["data"]
+            if len(annotations["data"]) < params["limit"]:
+                break
+            else:
+                params["offset"] = annotations["pagination"]["next_offset"]
+        return all_annotations
+
+    def get_annotations_by_class(self, annotation_class, from_date, to_date):
+        params = HDict({"to_date": to_date, "from_date": from_date, "limit": 100,
+                        "offset": 0, "annotation_class": annotation_class})
+        all_annotations = []
+        while True:
+            annotations = self.get("/annotation/query", params=params)
+            all_annotations += annotations["data"]
+            if len(annotations["data"]) < params["limit"]:
+                break
+            else:
+                params["offset"] = annotations["pagination"]["next_offset"]
+        return all_annotations
 
     def get_annotation_definition(self):
         return self.get("/annotation/definition")
 
-    def insert_annotation(self, animal_id, timestamp, end_ts, classes=None, attributes=None):
-        p = HDict({"animal_id": animal_id, "ts": timestamp,
+    def insert_animal_annotation(self, animal_id, ts, end_ts, classes=None, attributes=None):
+        p = HDict({"animal_id": animal_id, "ts": ts,
                    "end_ts": end_ts, "classes": classes,
                    "attributes": attributes})
         res = self.put("/annotation/animal", json=p)
         return res
 
-    def update_annotation(self, annotation_id, timestamp, end_ts, classes=None, attributes=None):
-        p = HDict({"annotation_id": annotation_id, "ts": timestamp,
+    def update_annotation(self, annotation_id, ts=None, end_ts=None, classes=None, attributes=None):
+        p = HDict({"annotation_id": annotation_id, "ts": ts,
                    "end_ts": end_ts, "classes": classes,
                    "attributes": attributes})
+        if ts is not None:
+            p["ts"] = ts
+        if end_ts is not None:
+            p["end_ts"] = end_ts
+        if classes is not None:
+            p["classes"] = classes
+        if attributes is not None:
+            p["attributes"] = attributes
         res = self.post("/annotation/id", json=p)
         return res
 
