@@ -231,7 +231,34 @@ class LowLevelAPI(BaseAPI):
             else:
                 params["offset"] = events["pagination"]["next_offset"]
         return all_events
+    
+    def get_annotation(self, annotation_id):
+        params = HDict({"annotation_id": annotation_id})
+        return self.get("/annotation/id", params= params)
 
+    def get_annotation_query(self, to_date, from_date, limit, offset, animal_id, organisation_id = None, group_id = None, device_id = None, annotation_class= None):
+        params = HDict({"to_date": to_date, "from_date": from_date, "limit": limit,
+                        "offset": offset, "animal_id": animal_id, "organisation_id": organisation_id,
+                        "group_id": group_id, "device_id": device_id ,"annotation_class": annotation_class,
+                        })
+        return self.get("/annotation/query", params= params)
+
+    def get_annotation_definition(self):
+        return self.get("/annotation/definition")
+
+    def insert_annotation(self, animal_id, timestamp, end_ts, classes=None, attributes=None):
+        p = HDict({"animal_id": animal_id, "ts": timestamp,
+                   "end_ts": end_ts, "classes": classes,
+                   "attributes": attributes})
+        res = self.put("/annotation/animal", json=p)
+        return res
+
+    def update_annotation(self, annotation_id, timestamp, end_ts, classes=None, attributes=None):
+        p = HDict({"annotation_id": annotation_id, "ts": timestamp,
+                   "end_ts": end_ts, "classes": classes,
+                   "attributes": attributes})
+        res = self.post("/annotation/id", json=p)
+        return res
 
 class LowLevelInternAPI(BaseAPI):
     def __init__(self, endpoint, api_key=None):
