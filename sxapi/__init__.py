@@ -9,8 +9,8 @@ import logging
 import requests
 
 from .low import LowLevelAPI, LowLevelInternAPI
-from .models import User, Animal, Organisation
-
+from .models import User, Animal, Organisation, Annotation
+from .helper import fromTS, toTS
 
 class API(object):
     def __init__(self, email=None, password=None, api_key=None, endpoint=None):
@@ -28,20 +28,35 @@ class API(object):
 
     @property
     def user(self):
-        return User(api=self.low, data=self.low.get_user())
+        return User(api=self.low, data=self.low.get_user())        
 
     @property
     def organisations(self):
         return [Organisation.create_from_data(api=self.low, data=x, _id=x["organisation_id"]) 
                 for x in self.low.get_organisations()]
+    
+    @property
+    def annotation_definitions(self):
+        return self.low.get_annotation_definition()
 
+    def get_annotation(self, annotation_id):
+        return Annotation(api= self.low, _id = annotation_id)
+    
     def get_animal(self, animal_id):
         return Animal(api=self.low, _id=animal_id)
 
     def get_organisation(self, organisation_id):
         return Organisation(api=self.low, _id=organisation_id)
+    
+    def get_annotation_query(self, to_date, from_date, limit,  offset, animal_id = None, organisation_id = None, group_id = None, device_id = None, reference_type= None):
+        return self.low.get_annotation_query(to_date, from_date, limit, offset, animal_id, organisation_id, group_id, device_id, reference_type)
 
+    def insert_annotation(self, animal_id, timestamp, end_ts, classes, attributes):
+        return self.low.insert_annotation(animal_id = animal_id, timestamp = timestamp, end_ts = end_ts, classes = classes, attributes = attributes)
 
+    def update_annotation(self, annotation_id, timestamp, end_ts, classes, attributes):
+        return self.low.update_annotation(annotation_id, timestamp, end_ts, classes, attributes)
+    
 class InternAPI(object):
     def __init__(self, endpoint, api_key, public_endpoint=None):
         """Initialize a new API client instance.
