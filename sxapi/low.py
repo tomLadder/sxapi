@@ -23,7 +23,7 @@ class Req(object):
             self.end = time.time()
         else:
             self.end = end
-    
+
     @property
     def timer(self):
         return self.end - self.start
@@ -231,7 +231,7 @@ class LowLevelPublicAPI(BaseAPI):
             else:
                 params["offset"] = events["pagination"]["next_offset"]
         return all_events
-    
+
     def get_annotation_by_id(self, annotation_id):
         params = HDict({"annotation_id": annotation_id})
         return self.get("/annotation/id", params= params)
@@ -418,6 +418,10 @@ class LowLevelInternAPI(BaseAPI):
     def getOrganisation(self, organisation_id):
         p = HDict({"organisation_id": organisation_id})
         res = self.get("/organisation", params=p)
+        return res
+
+    def getOrganisationList(self):
+        res = self.get("/organisationlist")
         return res
 
     def getAnimal(self, animal_id):

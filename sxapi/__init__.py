@@ -32,7 +32,7 @@ class API(object):
 
     @property
     def organisations(self):
-        return [Organisation.create_from_data(api=self.low, data=x, _id=x["organisation_id"]) 
+        return [Organisation.create_from_data(api=self.low, data=x, _id=x["organisation_id"])
             for x in self.low.get_organisations()]
 
     def get_annotation(self, annotation_id):
@@ -186,6 +186,9 @@ class LowLevelAPI(object):
 
     def getAnimal(self, animal_id):
         return self.privatelow.getAnimal(animal_id)
+
+    def getOrganisationList(self):
+        return self.privatelow.getOrganisationList()
 
     # Annotation Calls
 
