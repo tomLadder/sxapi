@@ -262,6 +262,19 @@ class LowLevelPublicAPI(BaseAPI):
                 params["offset"] = annotations["pagination"]["next_offset"]
         return all_annotations
 
+    def get_annotations_by_organisation(self, organisation_id, from_date, to_date):
+        params = HDict({"to_date": to_date, "from_date": from_date, "limit": 100,
+                        "offset": 0, "organisation_id": organisation_id})
+        all_annotations = []
+        while True:
+            annotations = self.get("/annotation/query", params=params)
+            all_annotations += annotations["data"]
+            if len(annotations["data"]) < params["limit"]:
+                break
+            else:
+                params["offset"] = annotations["pagination"]["next_offset"]
+        return all_annotations
+
     def get_annotation_definition(self):
         return self.get("/annotation/definition")
 

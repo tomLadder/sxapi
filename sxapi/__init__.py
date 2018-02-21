@@ -201,6 +201,9 @@ class LowLevelAPI(object):
     def get_annotations_by_class(self, annotation_class, from_date, to_date):
         return self.publiclow.get_annotations_by_class(annotation_class, from_date, to_date)
 
+    def get_annotations_by_organisation(self, organisation_id, from_date, to_date):
+        return self.publiclow.get_annotations_by_organisation(organisation_id, from_date, to_date)
+
     def get_animal_annotations(self, animal_id, from_date, to_date):
         return self.publiclow.get_animal_annotations(animal_id, from_date, to_date)
 
