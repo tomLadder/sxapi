@@ -89,3 +89,12 @@ def show_home():
 if __name__ == "__main__":
     app.run()
 ```
+
+## Development ##
+
+To build a new pip version increase version and tag with git tag -a "vX.X".
+Build artifacts and push to pip
+```
+python setup.py sdist bdist_wheel
+twine upload dist/*
+```
