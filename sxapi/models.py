@@ -349,6 +349,9 @@ class Animal(APIObject, DataMixin, EventMixin):
     def get_data(self):
         return self.api.get_animal_by_id(self._id)
 
+    def organisation_id(self):
+        return self.data["organisation_id"]
+
     @property
     def name(self):
         return self.data["name"]
