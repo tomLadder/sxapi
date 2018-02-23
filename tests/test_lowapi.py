@@ -5,7 +5,7 @@ import unittest
 import time
 import mock
 
-from sxapi import InternAPI
+from sxapi import LowLevelAPI
 
 
 class LowApiTests(unittest.TestCase):
@@ -24,7 +24,7 @@ class LowApiTests(unittest.TestCase):
         pass
 
     def test_status(self):
-        api = InternAPI(endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
+        api = LowLevelAPI(private_endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
         with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
             r = api.get_public_status()
             self.assertTrue(r)
@@ -49,7 +49,7 @@ class LowApiTests(unittest.TestCase):
             "data": [(t, 2.0), (t + 10, 3.0)]
         }
 
-        sxapi = InternAPI(endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
+        sxapi = LowLevelAPI(private_endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
 
         with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
             sxapi.updateSensorData(**d1)
@@ -94,7 +94,7 @@ class LowApiTests(unittest.TestCase):
             "data": [(t, 2.0), (t + 10, 3.0)]
         }
 
-        sxapi = InternAPI(endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
+        sxapi = LowLevelAPI(private_endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
 
         with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
             sxapi.insertSensorData(**d1)
@@ -142,7 +142,7 @@ class LowApiTests(unittest.TestCase):
             self.assertEqual(call[0][1]["params"]["metrics"], ["ph", "temp"])
 
     def test_events(self):
-        sxapi = InternAPI(endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
+        sxapi = LowLevelAPI(private_endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
         with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
             sxapi.getLastEventTimestamps("1234567890")
             call = patched_session.get.call_args_list
@@ -170,7 +170,7 @@ class LowApiTests(unittest.TestCase):
                              {"foo": "fooz", "bar": "hurtz"})
 
     def test_device(self):
-        sxapi = InternAPI(endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
+        sxapi = LowLevelAPI(private_endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
         with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
             sxapi.getDevice("1234567890")
             call = patched_session.get.call_args_list
@@ -189,7 +189,7 @@ class LowApiTests(unittest.TestCase):
                              {"hello": "world"})
 
     def test_sensorinfo(self):
-        sxapi = InternAPI(endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
+        sxapi = LowLevelAPI(private_endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
         with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
             sxapi.getSensorInfo("1234567890")
             call = patched_session.get.call_args_list
@@ -197,7 +197,7 @@ class LowApiTests(unittest.TestCase):
             self.assertEqual(call[0][1]["params"]["device_id"], "1234567890")
 
     def test_sensorrange(self):
-        sxapi = InternAPI(endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
+        sxapi = LowLevelAPI(private_endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
         with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
             sxapi.getSensorDataRange("1234567890", "act")
             call = patched_session.get.call_args_list
@@ -206,14 +206,14 @@ class LowApiTests(unittest.TestCase):
             self.assertEqual(call[0][1]["params"]["metric"], "act")
 
     def test_annotation(self):
-        sxapi = InternAPI(endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
+        sxapi = LowLevelAPI(private_endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
         with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
             sxapi.get_annotation_definitions()
             call = patched_session.get.call_args_list
             self.assertTrue(call[0][0][0].endswith("/annotation/definition"))
 
         with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
-            sxapi.get_annotation("myannoid")
+            sxapi.get_annotation_by_id("myannoid")
             call = patched_session.get.call_args_list
             self.assertTrue(call[0][0][0].endswith("/annotation/id"))
             self.assertEqual(call[0][1]["params"]["annotation_id"], "myannoid")
@@ -245,3 +245,12 @@ class LowApiTests(unittest.TestCase):
             self.assertEqual(call[0][1]["json"]["end_ts"], 35)
             self.assertEqual(call[0][1]["json"]["classes"], ["health", "desease"])
             self.assertEqual(call[0][1]["json"]["attributes"], [{"foo": "bar"}])
+
+        with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
+            sxapi.get_annotations_by_organisation("my_org_id", 1480773600, 1480773610)
+            call = patched_session.get.call_args_list
+            self.assertTrue(call[0][0][0].endswith("/annotation/query"))
+            self.assertEqual(call[0][1]["params"]["organisation_id"], "my_org_id")
+            self.assertEqual(call[0][1]["params"]["from_date"], 1480773600)
+            self.assertEqual(call[0][1]["params"]["to_date"], 1480773610)
+            self.assertEqual(call[0][1]["params"]["offset"], 0)
