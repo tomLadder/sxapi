@@ -23,7 +23,7 @@ class Req(object):
             self.end = time.time()
         else:
             self.end = end
-    
+
     @property
     def timer(self):
         return self.end - self.start
@@ -231,7 +231,7 @@ class LowLevelPublicAPI(BaseAPI):
             else:
                 params["offset"] = events["pagination"]["next_offset"]
         return all_events
-    
+
     def get_annotation_by_id(self, annotation_id):
         params = HDict({"annotation_id": annotation_id})
         return self.get("/annotation/id", params= params)
@@ -252,6 +252,19 @@ class LowLevelPublicAPI(BaseAPI):
     def get_annotations_by_class(self, annotation_class, from_date, to_date):
         params = HDict({"to_date": to_date, "from_date": from_date, "limit": 100,
                         "offset": 0, "annotation_class": annotation_class})
+        all_annotations = []
+        while True:
+            annotations = self.get("/annotation/query", params=params)
+            all_annotations += annotations["data"]
+            if len(annotations["data"]) < params["limit"]:
+                break
+            else:
+                params["offset"] = annotations["pagination"]["next_offset"]
+        return all_annotations
+
+    def get_annotations_by_organisation(self, organisation_id, from_date, to_date):
+        params = HDict({"to_date": to_date, "from_date": from_date, "limit": 100,
+                        "offset": 0, "organisation_id": organisation_id})
         all_annotations = []
         while True:
             annotations = self.get("/annotation/query", params=params)
@@ -418,6 +431,10 @@ class LowLevelInternAPI(BaseAPI):
     def getOrganisation(self, organisation_id):
         p = HDict({"organisation_id": organisation_id})
         res = self.get("/organisation", params=p)
+        return res
+
+    def getOrganisationList(self):
+        res = self.get("/organisationlist")
         return res
 
     def getAnimal(self, animal_id):
