@@ -213,3 +213,15 @@ class LowLevelAPI(object):
 
     def update_annotation(self, annotation_id, ts=None, end_ts=None, classes=None, attributes=None):
         return self.publiclow.update_annotation(annotation_id, ts, end_ts, classes, attributes)
+
+    def insert_testset(self, name, meta_data, annotation_ids):
+        return self.publiclow.insert_testset(name, meta_data, annotation_ids)
+
+    def update_testset(self, testset_id, annotation_ids):
+        return self.publiclow.update_testset(testset_id, annotation_ids)
+
+    def get_testset_by_id(self, testset_id):
+        return self.publiclow.get_testset_by_id(testset_id)
+
+    def get_testset_by_name(self, name):
+        return self.publiclow.get_testset_by_name(name)
