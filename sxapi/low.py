@@ -5,6 +5,7 @@
 import time
 import logging
 import requests
+import re
 from requests.exceptions import HTTPError
 
 from .models import HDict
@@ -68,8 +69,11 @@ class BaseAPI(object):
             out.append("{} in {} seconds".format(r.url, r.timer))
         return out
 
-    def to_url(self, path):
-        return "{}{}".format(self.api_base_url, path)
+    def to_url(self, path, version_modifier=None):
+        url = "{}{}".format(self.api_base_url, path)
+        if version_modifier is not None:
+            url = re.sub('\/[vV][0-9]+\/', "/{}/".format(version_modifier), url)
+        return url
 
     def _login(self):
         """Login to the api with api key or the given credentials.
@@ -101,7 +105,8 @@ class BaseAPI(object):
         return True
 
     def get(self, path, *args, **kwargs):
-        url = self.to_url(path)
+        version = kwargs.pop("version", None)
+        url = self.to_url(path, version)
         start = time.time()
         r = self.session.get(url, *args, **kwargs)
         self.track_request(url, r.status_code, start)
@@ -111,7 +116,8 @@ class BaseAPI(object):
         return r.json()
 
     def post(self, path, *args, **kwargs):
-        url = self.to_url(path)
+        version = kwargs.pop("version", None)
+        url = self.to_url(path, version)
         start = time.time()
         r = self.session.post(url, *args, allow_redirects=False, **kwargs)
         self.track_request(url, r.status_code, start)
@@ -123,7 +129,8 @@ class BaseAPI(object):
         return r.json()
 
     def put(self, path, *args, **kwargs):
-        url = self.to_url(path)
+        version = kwargs.pop("version", None)
+        url = self.to_url(path, version)
         start = time.time()
         r = self.session.put(url, *args, allow_redirects=False, **kwargs)
         self.track_request(url, r.status_code, start)
@@ -135,7 +142,8 @@ class BaseAPI(object):
         return r.json()
 
     def delete(self, path, *args, **kwargs):
-        url = self.to_url(path)
+        version = kwargs.pop("version", None)
+        url = self.to_url(path, version)
         start = time.time()
         r = self.session.delete(url, *args, **kwargs)
         self.track_request(url, r.status_code, start)
@@ -450,8 +458,26 @@ class LowLevelInternAPI(BaseAPI):
 
     def getOrganisation(self, organisation_id):
         p = HDict({"organisation_id": organisation_id})
-        res = self.get("/organisation", params=p)
+        res = self.get("/organisation/by_id", params=p, version="v1")
         return res
+
+    def getUser(self, user_id):
+        p = HDict({"user_id": user_id})
+        res = self.get("/user/by_id", params=p, version="v1")
+        return res
+
+    def query_organisations(self, name_search_string=None, partner_id=None):
+        params = HDict({"name_search_string": name_search_string, "limit": 100,
+                        "offset": 0, "partner_id": partner_id})
+        all_res = []
+        while True:
+            res = self.get("/organisation/list", params=params, version="v1")
+            all_res += res["data"]
+            if len(res["data"]) < params["limit"]:
+                break
+            else:
+                params["offset"] = res["pagination"]["next_offset"]
+        return all_res
 
     def getOrganisationList(self):
         res = self.get("/organisationlist")
@@ -460,4 +486,67 @@ class LowLevelInternAPI(BaseAPI):
     def getAnimal(self, animal_id):
         p = HDict({"animal_id": animal_id})
         res = self.get("/animal", params=p)
+        return res
+
+    def update_organisation_partner(self, organisation_id, partner_id):
+        p = HDict({"organisation_id": organisation_id,
+                   "partner_id": partner_id})
+        res = self.post("/organisation/partner_id", json=p, version="v1")
+        return res
+
+    def get_devices_seen(self, device_id, hours_back=24, return_sum=True, to_ts=None):
+        p = HDict({"device_id": device_id, "hours_back": int(hours_back)})
+        if return_sum:
+            p["return_sum"] = 1
+        else:
+            p["return_sum"] = 0
+        if to_ts:
+            p["to_ts"] = int(to_ts)
+        res = self.get("/devicesonline", params=p)
+        return res
+
+    def getNodeInfos(self, device_id, from_date, to_date):
+        p = HDict({"device_id": device_id, "from_date": int(from_date), "to_date": int(to_date)})
+        res = self.get("/nodeinfobulk", params=p)
+        return res
+
+    def getUploads(self, device_id, from_date, to_date):
+        p = HDict({"device_id": device_id, "from_date": int(from_date), "to_date": int(to_date)})
+        res = self.get("/anthilluploadbulk", params=p)
+        return res
+
+    def lastProductionDevices(self, device_id=None, skip=0, limit=10):
+        p = HDict({"skip": int(skip), "limit": int(limit)})
+        if device_id:
+            p["device_id"] = device_id
+        res = self.get("/productionevents", params=p)
+        return res
+
+    def query_users(self, email_search_string=None):
+        params = HDict({"email_search_string": email_search_string, "limit": 100,
+                        "offset": 0})
+        all_res = []
+        while True:
+            res = self.get("/user/list", params=params, version="v1")
+            all_res += res["data"]
+            if len(res["data"]) < params["limit"]:
+                break
+            else:
+                params["offset"] = res["pagination"]["next_offset"]
+        return all_res
+
+    def get_hidden_shares(self, user_id):
+        params = HDict({"user_id": user_id})
+        res = self.get("/user/hidden_shares_by_user", params=params, version="v1")
+        return res
+
+    def delete_hidden_share(self, share_id):
+        params = HDict({"share_id": share_id})
+        res = self.delete("/user/hidden_share", params=params, version="v1")
+        return res
+
+    def create_hidden_share(self, organisation_id, user_id):
+        params = HDict({"organisation_id": organisation_id,
+                        "user_id": user_id})
+        res = self.put("/user/hidden_share", json=params, version="v1")
         return res

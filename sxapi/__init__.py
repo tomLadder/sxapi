@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf8
 
-__version__ = '0.9'
+__version__ = '0.10'
 
 
 import time
@@ -190,6 +190,18 @@ class LowLevelAPI(object):
     def getOrganisationList(self):
         return self.privatelow.getOrganisationList()
 
+    def get_devices_seen(self, device_id, hours_back=24, return_sum=True, to_ts=None):
+        return self.privatelow.get_devices_seen(device_id, hours_back, return_sum, to_ts)
+
+    def getNodeInfos(self, device_id, from_date, to_date):
+        return self.privatelow.getNodeInfos(device_id, from_date, to_date)
+
+    def getUploads(self, device_id, from_date, to_date):
+        return self.privatelow.getUploads(device_id, from_date, to_date)
+
+    def lastProductionDevices(self, device_id=None, skip=0, limit=10):
+        return self.privatelow.lastProductionDevices(device_id, skip, limit)
+
     # Annotation Calls
 
     def get_annotation_by_id(self, annotation_id):
@@ -213,6 +225,34 @@ class LowLevelAPI(object):
 
     def update_annotation(self, annotation_id, ts=None, end_ts=None, classes=None, attributes=None):
         return self.publiclow.update_annotation(annotation_id, ts, end_ts, classes, attributes)
+
+
+    # Organisation Calls
+
+    def query_organisations(self, name_search_string=None, partner_id=None):
+        return self.privatelow.query_organisations(name_search_string, partner_id)
+
+    def update_organisation_partner(self, organisation_id, partner_id):
+        return self.privatelow.update_organisation_partner(organisation_id, partner_id)
+
+    # User Calls
+
+    def get_user_by_id(self, user_id):
+        return self.privatelow.getUser(user_id)
+
+    def query_users(self, email_search_string=None):
+        return self.privatelow.query_users(email_search_string=email_search_string)
+
+    def get_hidden_shares(self, user_id):
+        return self.privatelow.get_hidden_shares(user_id)
+
+    def delete_hidden_share(self, share_id):
+        return self.privatelow.delete_hidden_share(share_id)
+
+    def create_hidden_share(self, organisation_id, user_id):
+        return self.privatelow.create_hidden_share(organisation_id, user_id)
+
+    # Testset Calls 
 
     def insert_testset(self, name, meta_data, annotation_ids):
         return self.publiclow.insert_testset(name, meta_data, annotation_ids)
