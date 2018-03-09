@@ -338,7 +338,7 @@ class Heat(APIObject):
         return "<{}({})>".format(self.__class__.__name__, self.date)
 
 
-class Animal(APIObject, DataMixin, EventMixin):    
+class Animal(APIObject, DataMixin, EventMixin):
     def __init__(self, api, _id):
         super(Animal, self).__init__(api, _id)
         self._sensordata = None
@@ -413,9 +413,9 @@ class Annotation(APIObject):
         return self.data["reference_type"]
 
     @property
-    def timestamp(self):        
+    def timestamp(self):
         return self.data["ts"]
-    
+
     @property
     def attributes(self):
         return self.data["attributes"]
@@ -423,3 +423,22 @@ class Annotation(APIObject):
     @property
     def classes(self):
         return fromTS(self.data["classes"])
+
+class TestSet(APIObject):
+    def __init__(self, api, _id):
+        super(TestSet, self).__init__(api, _id)
+
+    def get_data(self):
+        return self.api.get_testset_by_id(self._id)
+
+    @property
+    def name(self):
+        return self.data["name"]
+
+    @property
+    def meta_data(self):
+        return self.data["meta_data"]
+
+    @property
+    def annotations(self):
+        return self.data["annotations"]

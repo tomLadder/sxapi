@@ -251,3 +251,17 @@ class LowLevelAPI(object):
 
     def create_hidden_share(self, organisation_id, user_id):
         return self.privatelow.create_hidden_share(organisation_id, user_id)
+
+    # Testset Calls 
+
+    def insert_testset(self, name, meta_data, annotation_ids):
+        return self.publiclow.insert_testset(name, meta_data, annotation_ids)
+
+    def update_testset(self, testset_id, annotation_ids):
+        return self.publiclow.update_testset(testset_id, annotation_ids)
+
+    def get_testset_by_id(self, testset_id):
+        return self.publiclow.get_testset_by_id(testset_id)
+
+    def get_testset_by_name(self, name):
+        return self.publiclow.get_testset_by_name(name)

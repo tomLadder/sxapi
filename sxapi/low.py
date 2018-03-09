@@ -308,6 +308,26 @@ class LowLevelPublicAPI(BaseAPI):
         res = self.post("/annotation/id", json=p)
         return res
 
+    def insert_testset(self, name, meta_data, annotation_ids):
+        p = HDict({"name": name, "meta_data": meta_data, "annotation_ids": annotation_ids})
+        res = self.put("/annotation/testset", json=p, timeout=25)
+        return res
+
+    def update_testset(self, testset_id, annotation_ids):
+        p = HDict({"testset_id": testset_id, "annotation_ids": annotation_ids})
+        res = self.post("/annotation/testset", json=p)
+        return res
+
+    def get_testset_by_id(self, testset_id):
+        params = HDict({"testset_id": testset_id})
+        res = self.get("/annotation/testset", params=params)
+        return res
+
+    def get_testset_by_name(self, name):
+        params = HDict({"name": name})
+        res = self.get("/annotation/testset/by_name", params=params)
+        return res
+
 class LowLevelInternAPI(BaseAPI):
     def __init__(self, endpoint, api_key=None):
         """Initialize a new low level intern API client instance.
