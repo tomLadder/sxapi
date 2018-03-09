@@ -254,3 +254,10 @@ class LowApiTests(unittest.TestCase):
             self.assertEqual(call[0][1]["params"]["from_date"], 1480773600)
             self.assertEqual(call[0][1]["params"]["to_date"], 1480773610)
             self.assertEqual(call[0][1]["params"]["offset"], 0)
+
+    def test_organisations(self):
+        sxapi = LowLevelAPI(private_endpoint=self.INTERN_ENDPOINT, public_endpoint=self.PUBLIC_ENDPOINT, api_key=self.API_KEY)
+        with mock.patch('sxapi.low.BaseAPI.session') as patched_session:
+            sxapi.query_organisations()
+            call = patched_session.get.call_args_list
+            self.assertEqual(call[0][0][0], "http://0.0.0.0:8787/internapi/v1/organisation/list")
