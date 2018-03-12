@@ -550,3 +550,8 @@ class LowLevelInternAPI(BaseAPI):
                         "user_id": user_id})
         res = self.put("/user/hidden_share", json=params, version="v1")
         return res
+
+    def search_devices(self, search_string):
+        p = HDict({"search_string": search_string})
+        res = self.get("/devicesearch", params=p)
+        return res

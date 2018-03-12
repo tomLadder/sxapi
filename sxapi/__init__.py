@@ -202,6 +202,10 @@ class LowLevelAPI(object):
     def lastProductionDevices(self, device_id=None, skip=0, limit=10):
         return self.privatelow.lastProductionDevices(device_id, skip, limit)
 
+    def searchDevices(self, search_string):
+        return self.privatelow.search_devices(search_string)
+
+
     # Annotation Calls
 
     def get_annotation_by_id(self, annotation_id):
