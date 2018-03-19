@@ -80,6 +80,9 @@ class LowLevelAPI(object):
     def get_device_by_id(self, device_id):
         return self.publiclow.get_device_by_id(device_id)
 
+    def get_device_uploads(self, from_ts, to_ts, device_id):
+        return self.publiclow.get_device_uploads(from_ts, to_ts, device_id)
+
     def get_organisation_by_id(self, organisation_id):
         return self.publiclow.get_organisation_by_id(organisation_id)
 

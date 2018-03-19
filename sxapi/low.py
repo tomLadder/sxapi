@@ -188,6 +188,14 @@ class LowLevelPublicAPI(BaseAPI):
         params = HDict({"device_id": device_id})
         return self.get("/device/by_id", params=params)
 
+    def get_device_uploads(from_ts, to_ts, device_id):
+        params = HDict({
+            "device_id": device_id,
+            "from_date": from_ts,
+            "to_date": to_ts
+        })
+        return self.get("/anthilluploadbulk", params=params)
+
     def get_organisation_by_id(self, organisation_id):
         params = HDict({"organisation_id": organisation_id})
         return self.get("/organisation/by_id", params=params)
