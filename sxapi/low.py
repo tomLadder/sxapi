@@ -241,9 +241,9 @@ class LowLevelPublicAPI(BaseAPI):
         return all_events
 
     def get_events_by_organisation(self, organisation_id, from_date, to_date, categories=None):
-        p = {"organisation_id": organisation_id, "offset": 0, "limit": 100,
-             "from_date": int(from_date), "to_date": int(to_date),
-             "categories": categories}
+        params = HDict({"organisation_id": organisation_id, "offset": 0, "limit": 100,
+                       "from_date": int(from_date), "to_date": int(to_date),
+                       "categories": categories})
         all_res = []
         while True:
             res = self.get("event/by_organisation", params=params)
