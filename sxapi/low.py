@@ -246,7 +246,7 @@ class LowLevelPublicAPI(BaseAPI):
                        "categories": categories})
         all_res = []
         while True:
-            res = self.get("event/by_organisation", params=params)
+            res = self.get("/event/by_organisation", params=params)
             all_res += res["data"]
             if len(res["data"]) < params["limit"]:
                 break
