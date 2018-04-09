@@ -569,3 +569,8 @@ class LowLevelInternAPI(BaseAPI):
         p = HDict({"search_string": search_string})
         res = self.get("/devicesearch", params=p)
         return res
+
+    def get_animals_by_organisation(self, organisation_id):
+        p = HDict({"organisation_id": organisation_id})
+        res = self.get("/animallist", params=p)
+        return res
