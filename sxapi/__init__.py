@@ -116,6 +116,9 @@ class LowLevelAPI(object):
         t = toTS(to_date)
         return self.publiclow.get_events_by_organisation(organisation_id, f, t, categories=categories)
 
+    def get_animals_by_organisation(self, organisation_id):
+        return self.privatelow.get_animals_by_organisation(organisation_id)
+
     # Deprecated Calls to Public (old name)
 
     def getAnimalIdsForOrganisation(self, organisation_id):
