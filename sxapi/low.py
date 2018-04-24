@@ -188,14 +188,6 @@ class LowLevelPublicAPI(BaseAPI):
         params = HDict({"device_id": device_id})
         return self.get("/device/by_id", params=params)
 
-    def get_device_uploads(from_ts, to_ts, device_id):
-        params = HDict({
-            "device_id": device_id,
-            "from_date": from_ts,
-            "to_date": to_ts
-        })
-        return self.get("/anthilluploadbulk", params=params)
-
     def get_organisation_by_id(self, organisation_id):
         params = HDict({"organisation_id": organisation_id})
         return self.get("/organisation/by_id", params=params)
@@ -222,8 +214,8 @@ class LowLevelPublicAPI(BaseAPI):
                         "from_date": from_date, "to_date": to_date})
         return self.get("/data/query", params=params)
 
-    def get_animal_events(self, animal_id, from_date=None, to_date=None):
-        params = HDict({"animal_id": animal_id, "limit": 100, "offset": 0,
+    def get_animal_events(self, animal_id, from_date=None, to_date=None, limit=100, offset=0):
+        params = HDict({"animal_id": animal_id, "limit": limit, "offset": offset,
                         "from_date": None, "to_date":None})
         all_events = []
         while True:
@@ -563,3 +555,11 @@ class LowLevelInternAPI(BaseAPI):
         p = HDict({"search_string": search_string})
         res = self.get("/devicesearch", params=p)
         return res
+
+    def get_device_uploads(from_ts, to_ts, device_id):
+        params = HDict({
+            "device_id": device_id,
+            "from_date": from_ts,
+            "to_date": to_ts
+        })
+        return self.get("/anthilluploadbulk", params=params)
