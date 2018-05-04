@@ -2,8 +2,16 @@
 # coding: utf8
 
 import datetime
+import collections
+import pendulum
+import time
+import functools
+import pendulum
+
 
 def toTS(dt):
+    if isinstance(dt, pendulum.Pendulum):
+        return int((dt - datetime.datetime(1970, 1, 1)).total_seconds())
     if isinstance(dt, datetime.datetime):
         return int((dt - datetime.datetime(1970, 1, 1)).total_seconds())
     if isinstance(dt, datetime.date):
@@ -11,12 +19,20 @@ def toTS(dt):
     return int(dt)
 
 
-def fromTS(ts):
-    if isinstance(ts, datetime.datetime):
-        return ts
-    if isinstance(ts, datetime.date):
-        return datetime.datetime.combine(ts, datetime.datetime.min.time())
-    return datetime.datetime.utcfromtimestamp(ts)
+def fromTS(ts, timezone=None):
+    time_tuple = time.gmtime(ts)
+    if timezone is None:
+        timezone = "UTC"
+    return pendulum.datetime(
+        year=time_tuple.tm_year,
+        month=time_tuple.tm_mon,
+        day=time_tuple.tm_mday,
+        hour=time_tuple.tm_hour,
+        minute=time_tuple.tm_min,
+        second=time_tuple.tm_sec,
+        microsecond=0,
+        tz=timezone
+    )
 
 
 def splitDateRange(start, end, days):
@@ -32,6 +48,7 @@ def splitDateRange(start, end, days):
     if last < t:
         yield (fromTS(last+1), fromTS(t))
 
+
 def splitTimeRange(start, end, days):
     assert start <= end
     f = int(start)
@@ -44,3 +61,58 @@ def splitTimeRange(start, end, days):
         yield (i, last)
     if last < t:
         yield (last+1, t)
+
+
+class Memoize(object):
+   '''Decorator. Caches a function's return value each time it is called.
+   If called later with the same arguments, the cached value is returned
+   (not reevaluated).
+   '''
+   def __init__(self, func):
+      self.func = func
+      self.cache = {}
+   def __call__(self, *args):
+      if not isinstance(args, collections.Hashable):
+         # uncacheable. a list, for instance.
+         # better to not cache than blow up.
+         return self.func(*args)
+      if args in self.cache:
+         return self.cache[args]
+      else:
+         value = self.func(*args)
+         self.cache[args] = value
+         return value
+   def __repr__(self):
+      '''Return the function's docstring.'''
+      return self.func.__doc__
+   def __get__(self, obj, objtype):
+      '''Support instance methods.'''
+      return functools.partial(self.__call__, obj)
+
+
+def getDIM(currentDate, lactations):
+    #  get all calving dates, make sure they are sorted by date
+    closest_calving = None
+    days14 = datetime.timedelta(days=14)
+    days120 = datetime.timedelta(days=120)
+
+    for lactation in lactations:
+        calving_date = pd.to_datetime(lactation['calving_date'], unit='s')
+        start = calving_date - days14
+        end = calving_date + days120
+        if start <= currentDate <= end:
+            closest_calving = lactation['calving_date']
+    if closest_calving is None:
+        return -14.5
+    else:
+        delta = currentDate - pd.to_datetime(closest_calving, unit='s')
+
+    return delta.days
+
+
+def calculateDIM(frame, index_name, lactations):
+    dim_frame = pd.Series(frame[index_name].index).apply(getClosestCalvingDelta,args=(lactations,))
+    dim_frame.index = frame.index
+    frame['dim'] = dim_frame
+    frame.dropna(inplace=True)
+    return frame

@@ -2,7 +2,9 @@
 # coding: utf8
 
 import time
+import pendulum
 import datetime
+import math
 
 try:
     import pandas as pd
@@ -27,17 +29,27 @@ class APIObject(object):
         self.api = api
         self._id = _id
         self._data = None
+        self._timezone = None
 
     def load(self, data):
         self._data = data
 
+    @property
+    def timezone(self):
+        return self._timezone
+
     @classmethod
-    def create_from_data(cls, api, data, _id=None):
+    def create_from_data(cls, api, data, _id=None, timezone=None):
         if _id is None:
             _id = data["_id"]
         c = cls(api=api, _id=_id)
+        if timezone is not None:
+            c._timezone = timezone
         c.load(data)
         return c
+
+    def fromTS(self, ts):
+        return fromTS(ts, self.timezone)
 
     def get_data(self):
         raise NotImplementedError("reload not implemented")
@@ -126,7 +138,7 @@ class Event(APIObject):
 
     @property
     def date(self):
-        return fromTS(self.data["timestamp"])
+        return self.fromTS(self.data["timestamp"])
 
 
 class Events(object):
@@ -147,7 +159,7 @@ class Events(object):
                 self._data = self.api.get_animal_events(self.parent._id, f, t)
             elif isinstance(self.parent, Device):
                 self._data = self.api.get_device_events(self.parent._id, f, t)
-            self._data = [Event.create_from_data(api=self.api, data=x) for x in self._data]
+            self._data = [Event.create_from_data(api=self.api, data=x, timezone=parent.timezone) for x in self._data]
             self._data.sort(key=lambda x: x.date)
         return self._data
 
@@ -302,7 +314,7 @@ class Lactation(APIObject):
 
     @property
     def date(self):
-        return fromTS(self.data["calving_date"])
+        return self.fromTS(self.data["calving_date"])
 
     def __str__(self):
         return "<{}({})>".format(self.__class__.__name__, self.date)
@@ -329,7 +341,7 @@ class Heat(APIObject):
 
     @property
     def date(self):
-        return fromTS(self.data["heat_date"])
+        return self.fromTS(self.data["heat_date"])
 
     def __str__(self):
         return "<{}({})>".format(self.__class__.__name__, self.date)
@@ -351,6 +363,76 @@ class Animal(APIObject, DataMixin, EventMixin):
 
     def organisation_id(self):
         return self.data["organisation_id"]
+
+    @property
+    def current_dim(self):
+        return self.to_dim(pendulum.now(self.timezone))
+
+    def to_dim(self, dt):
+        return self.fast_dim_range(dt, dt)[0][1]
+
+    def fast_dim_range(self, from_dt, to_dt, interval=60*60, timestamp=False):
+        out = []
+        cdt = pendulum.instance(to_dt)
+
+        all_lactations = []
+        for lac in self.lactations:
+            all_lactations.append(lac.date.replace(hour=0, minute=0, second=0, microsecond=0))
+
+        lac_idx = 1
+        while from_dt <= cdt:
+            if len(all_lactations) < 1:
+                out.append((cdt, -14.5))
+                cdt = cdt.subtract(seconds=interval)
+                continue
+            elif lac_idx >= len(all_lactations):
+                dim = math.floor((cdt - all_lactations[-lac_idx]).total_seconds() / (24*60*60))
+                if dim < -14:
+                    dim = -14.5
+                out.append((cdt, dim))
+                cdt = cdt.subtract(seconds=interval)
+                continue
+            elif lac_idx < len(all_lactations):
+                dim = math.floor((cdt - all_lactations[-lac_idx]).total_seconds() / (24*60*60))
+                while len(all_lactations) > lac_idx and all_lactations[-lac_idx].subtract(days=14) > cdt:
+                    lac_idx += 1
+                    dim = math.floor((cdt - all_lactations[-lac_idx]).total_seconds() / (24*60*60))
+                out.append((cdt, dim))
+                cdt = cdt.subtract(seconds=interval)
+                continue
+            else:
+                assert False  # WTF
+        if timestamp is True:
+            out = [(toTS(ts), v) for ts, v in out]
+        return list(reversed(out))
+
+    def dim_range(self, from_dt, to_dt, interval=60*60, timestamp=False):
+        return self.fast_dim_range(from_dt, to_dt, interval=interval, timestamp=timestamp)
+
+    # def toDIM(self, dt):
+    #     #  get all calving dates, make sure they are sorted by date
+    #     closest_calving = None
+    #     days14 = datetime.timedelta(days=14)
+    #     days120 = datetime.timedelta(days=120)
+
+    #     for lactation in self.lactations:
+    #         calving_date = lactation.date
+    #         start = calving_date - days14
+    #         end = calving_date + days120
+    #         if start <= dt <= end:
+    #             closest_calving = calving_date
+    #     if closest_calving is None:
+    #         return -14.5
+    #     else:
+    #         delta = dt - closest_calving
+    #     return delta.days
+
+    # Remove this once it is coming from the animal
+    @property
+    def timezone(self):
+        if self._timezone is None:
+            self._timezone = self.api.get_timezone_for_organisation_id(self.data["organisation_id"])
+        return self._timezone
 
     @property
     def name(self):
@@ -379,14 +461,14 @@ class Animal(APIObject, DataMixin, EventMixin):
     @property
     def heats(self):
         if not self._heats:
-            self._heats = [Heat.create_from_data(api=self.api, data=h) for h in self.data["heats"]]
+            self._heats = [Heat.create_from_data(api=self.api, data=h, timezone=self.timezone) for h in self.data["heats"]]
             self._heats.sort(key=lambda x: x.date)
         return self._heats
 
     @property
     def lactations(self):
         if not self._lactations:
-            self._lactations = [Lactation.create_from_data(api=self.api, data=h) for h in self.data["lactations"]]
+            self._lactations = [Lactation.create_from_data(api=self.api, data=h, timezone=self.timezone) for h in self.data["lactations"]]
             self._lactations.sort(key=lambda x: x.date)
         return self._lactations
 
@@ -422,7 +504,8 @@ class Annotation(APIObject):
 
     @property
     def classes(self):
-        return fromTS(self.data["classes"])
+        return self.data["classes"]
+
 
 class TestSet(APIObject):
     def __init__(self, api, _id):

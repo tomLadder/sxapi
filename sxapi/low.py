@@ -9,7 +9,7 @@ import re
 from requests.exceptions import HTTPError
 
 from .models import HDict
-from .helper import splitTimeRange
+from .helper import splitTimeRange, Memoize
 
 
 PUBLIC_API = "https://api.smaxtec.com/api/v1"
@@ -341,6 +341,14 @@ class LowLevelPublicAPI(BaseAPI):
         params = HDict({"name": name})
         res = self.get("/annotation/testset/by_name", params=params)
         return res
+
+    @Memoize
+    def get_timezone_for_organisation_id(self, organisation_id):
+        res = self.get_organisation_by_id(organisation_id)
+        if res:
+            return res.get("timezone", None)
+        return None
+
 
 class LowLevelInternAPI(BaseAPI):
     def __init__(self, endpoint, api_key=None):

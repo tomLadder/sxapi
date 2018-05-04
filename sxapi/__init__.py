@@ -1,12 +1,13 @@
 #!/usr/bin/python
 # coding: utf8
 
-__version__ = '0.11'
+__version__ = '0.12'
 
 
 import time
 import logging
 import requests
+import warnings
 
 from .low import LowLevelPublicAPI, LowLevelInternAPI
 from .models import User, Animal, Organisation, Annotation
@@ -70,6 +71,16 @@ class LowLevelAPI(object):
         return self.privatelow.get_status()
 
     # Calls to Public API
+
+    # High Level
+
+    def get_animal_object(self, animal_id):
+        return Animal(api=self.publiclow, _id=animal_id)
+
+    def get_organisation_object(self, organisation_id):
+        return Organisation(api=self.publiclow, _id=organisation_id)
+
+    # Low Level
 
     def get_organisation_animal_ids(self, organisation_id):
         return self.publiclow.get_organisation_animal_ids(organisation_id)
@@ -193,12 +204,15 @@ class LowLevelAPI(object):
                                          with_allmeta=with_allmeta)
 
     def getOrganisation(self, organisation_id):
+        warnings.warn("getOrganisation (internal) is deprecated. use get_organisation_by_id", DeprecationWarning)
         return self.privatelow.getOrganisation(organisation_id)
 
     def getAnimal(self, animal_id):
+        warnings.warn("getAnimal (internal) is deprecated. use get_animal_by_id", DeprecationWarning)
         return self.privatelow.getAnimal(animal_id)
 
     def getOrganisationList(self):
+        warnings.warn("getOrganisationList (internal) is deprecated. use query_organisations", DeprecationWarning)
         return self.privatelow.getOrganisationList()
 
     def get_devices_seen(self, device_id, hours_back=24, return_sum=True, to_ts=None):
