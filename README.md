@@ -31,6 +31,8 @@ print a.get_organisation("5721e3f8a80a5f54c6315131").devices
 print a.get_animal("572209c1a80a5f54c631513f").name
 print a.get_animal("572209c1a80a5f54c631513f").heats
 print a.get_animal("572209c1a80a5f54c631513f").lactations
+print a.get_animal("572209c1a80a5f54c631513f").current_dim
+print a.get_animal("572209c1a80a5f54c631513f").dim_range(datetime.datetime(2018,1,1), datetime.datetime.now(), interval=12*60*60)
 
 # Show request stats
 a.print_stats()
@@ -46,7 +48,7 @@ a = LowLevelAPI(email="user@smaxtec.com", password="mypassword")
 # Get by id
 print a.get_organisation_by_id("5721e3f8a80a5f54c6315131")
 print a.get_animal_by_id("572209c1a80a5f54c631513f")
-print a.getAnimal("dsdsd") # from internal
+print a.getAnimal("dsdsd") # from internal works only with api key
 ```
 
 
