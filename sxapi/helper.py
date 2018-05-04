@@ -88,31 +88,3 @@ class Memoize(object):
    def __get__(self, obj, objtype):
       '''Support instance methods.'''
       return functools.partial(self.__call__, obj)
-
-
-def getDIM(currentDate, lactations):
-    #  get all calving dates, make sure they are sorted by date
-    closest_calving = None
-    days14 = datetime.timedelta(days=14)
-    days120 = datetime.timedelta(days=120)
-
-    for lactation in lactations:
-        calving_date = pd.to_datetime(lactation['calving_date'], unit='s')
-        start = calving_date - days14
-        end = calving_date + days120
-        if start <= currentDate <= end:
-            closest_calving = lactation['calving_date']
-    if closest_calving is None:
-        return -14.5
-    else:
-        delta = currentDate - pd.to_datetime(closest_calving, unit='s')
-
-    return delta.days
-
-
-def calculateDIM(frame, index_name, lactations):
-    dim_frame = pd.Series(frame[index_name].index).apply(getClosestCalvingDelta,args=(lactations,))
-    dim_frame.index = frame.index
-    frame['dim'] = dim_frame
-    frame.dropna(inplace=True)
-    return frame
