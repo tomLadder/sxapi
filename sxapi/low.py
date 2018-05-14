@@ -31,7 +31,7 @@ class Req(object):
 
 
 class BaseAPI(object):
-    def __init__(self, base_url, email=None, password=None, api_key=None):
+    def __init__(self, base_url, email=None, password=None, api_key=None, tz_aware=True):
         """Initialize a new base low level API client instance.
         """
         self.api_base_url = base_url.rstrip("/")
@@ -44,6 +44,7 @@ class BaseAPI(object):
         self._session = None
         self.counter = 0
         self.requests = []
+        self.tz_aware = tz_aware
 
     @property
     def session(self):
@@ -154,11 +155,11 @@ class BaseAPI(object):
 
 
 class LowLevelPublicAPI(BaseAPI):
-    def __init__(self, email=None, password=None, api_key=None, endpoint=None):
+    def __init__(self, email=None, password=None, api_key=None, endpoint=None, tz_aware=True):
         """Initialize a new low level API client instance.
         """
         ep = endpoint or PUBLIC_API
-        super(LowLevelPublicAPI, self).__init__(ep, email=email, password=password, api_key=api_key)
+        super(LowLevelPublicAPI, self).__init__(ep, email=email, password=password, api_key=api_key, tz_aware=tz_aware)
 
     def get_status(self):
         return self.get("/service/status")
@@ -351,12 +352,12 @@ class LowLevelPublicAPI(BaseAPI):
 
 
 class LowLevelInternAPI(BaseAPI):
-    def __init__(self, endpoint, api_key=None):
+    def __init__(self, endpoint, api_key=None, tz_aware=True):
         """Initialize a new low level intern API client instance.
         """
         if not endpoint:
             raise ValueError("Endpoint needed for low level API")
-        super(LowLevelInternAPI, self).__init__(endpoint, api_key=api_key)
+        super(LowLevelInternAPI, self).__init__(endpoint, api_key=api_key, tz_aware=tz_aware)
 
     def get_status(self):
         return self._api_status()

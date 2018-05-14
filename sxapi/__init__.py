@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf8
 
-__version__ = '0.12'
+__version__ = '0.13'
 
 
 import time
@@ -14,10 +14,10 @@ from .models import User, Animal, Organisation, Annotation
 from .helper import fromTS, toTS
 
 class API(object):
-    def __init__(self, email=None, password=None, api_key=None, endpoint=None):
+    def __init__(self, email=None, password=None, api_key=None, endpoint=None, tz_aware=True):
         """Initialize a new API client instance.
         """
-        self.low = LowLevelPublicAPI(email=email, password=password, api_key=api_key, endpoint=endpoint)
+        self.low = LowLevelPublicAPI(email=email, password=password, api_key=api_key, endpoint=endpoint, tz_aware=tz_aware)
 
     @property
     def status(self):
@@ -47,12 +47,14 @@ class API(object):
 
 
 class LowLevelAPI(object):
-    def __init__(self, email=None, password=None, private_endpoint=None, api_key=None, public_endpoint=None):
+    def __init__(self, email=None, password=None, private_endpoint=None, api_key=None, public_endpoint=None, tz_aware=True):
         """Initialize a new API client instance.
         """
-        self.publiclow = LowLevelPublicAPI(email=email, password=password, api_key=api_key, endpoint=public_endpoint)
+        self.publiclow = LowLevelPublicAPI(email=email, password=password, api_key=api_key,
+                                           endpoint=public_endpoint, tz_aware=tz_aware)
         if private_endpoint is not None and api_key is not None:
-            self.privatelow = LowLevelInternAPI(endpoint=private_endpoint, api_key=api_key)
+            self.privatelow = LowLevelInternAPI(endpoint=private_endpoint, api_key=api_key,
+                                                tz_aware=tz_aware)
         else:
             pass
             # self.privatelow = self._privatelow
