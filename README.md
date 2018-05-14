@@ -38,6 +38,20 @@ print a.get_animal("572209c1a80a5f54c631513f").dim_range(datetime.datetime(2018,
 a.print_stats()
 ```
 
+### Timezone Awareness ###
+
+By default the API Client tries to make all datetimes timezone aware with pendulum datetime instances.
+See: https://pendulum.eustace.io/docs/
+
+To deactivate this behaviour create API Clients with *tz_aware=False*
+
+```
+from sxapi import API
+
+a = API(email="myuser@smaxtec.com", password="mypassword", tz_aware=False)
+```
+
+
 ## Low Level Usage ##
 
 ```

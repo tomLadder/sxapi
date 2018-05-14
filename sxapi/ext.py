@@ -39,6 +39,8 @@ class FlaskSX(object):
         app.config.setdefault('SMAXTEC_API_PUBLIC_ENDPOINT', None)
         app.config.setdefault('SMAXTEC_API_PRIVATE_ENDPOINT', None)
         app.config.setdefault('SMAXTEC_API_KEY', None)
+        app.config.setdefault('SMAXTEC_API_TZ_AWARE', True)
+
 
     @property
     def highlevel(self):
@@ -54,7 +56,8 @@ class FlaskSX(object):
                 ctx.sx_high = API(email=current_app.config["SMAXTEC_API_EMAIL"],
                                   password=current_app.config["SMAXTEC_API_PASSWORD"],
                                   api_key=current_app.config["SMAXTEC_API_KEY"],
-                                  endpoint=current_app.config["SMAXTEC_API_PUBLIC_ENDPOINT"])
+                                  endpoint=current_app.config["SMAXTEC_API_PUBLIC_ENDPOINT"],
+                                  tz_aware=current_app.config["SMAXTEC_API_TZ_AWARE"])
             return ctx.sx_high
         raise RuntimeError("No App Context")
 
@@ -73,7 +76,8 @@ class FlaskSX(object):
                                          password=current_app.config["SMAXTEC_API_PASSWORD"],
                                          email=current_app.config["SMAXTEC_API_EMAIL"],
                                          api_key=current_app.config["SMAXTEC_API_KEY"],
-                                         public_endpoint=current_app.config["SMAXTEC_API_PUBLIC_ENDPOINT"])
+                                         public_endpoint=current_app.config["SMAXTEC_API_PUBLIC_ENDPOINT"],
+                                         tz_aware=current_app.config["SMAXTEC_API_TZ_AWARE"])
             return ctx.sx_low
         raise RuntimeError("No App Context")
 

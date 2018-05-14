@@ -11,7 +11,8 @@ import pendulum
 
 def toTS(dt):
     if isinstance(dt, pendulum.Pendulum):
-        return int((dt - datetime.datetime(1970, 1, 1)).total_seconds())
+        base = dt.replace(year=1970, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        return int((dt - base).total_seconds())
     if isinstance(dt, datetime.datetime):
         return int((dt - datetime.datetime(1970, 1, 1)).total_seconds())
     if isinstance(dt, datetime.date):
@@ -19,8 +20,18 @@ def toTS(dt):
     return int(dt)
 
 
-def fromTS(ts, timezone=None):
+def fromTS(ts, timezone=None, tz_aware=True):
     time_tuple = time.gmtime(ts)
+    if not tz_aware:
+        return datetime.datetime(
+            year=time_tuple.tm_year,
+            month=time_tuple.tm_mon,
+            day=time_tuple.tm_mday,
+            hour=time_tuple.tm_hour,
+            minute=time_tuple.tm_min,
+            second=time_tuple.tm_sec,
+            microsecond=0,
+        )
     if timezone is None:
         timezone = "UTC"
     return pendulum.datetime(

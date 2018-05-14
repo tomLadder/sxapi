@@ -30,6 +30,7 @@ class APIObject(object):
         self._id = _id
         self._data = None
         self._timezone = None
+        self._tz_aware = self.api.tz_aware
 
     def load(self, data):
         self._data = data
@@ -49,7 +50,10 @@ class APIObject(object):
         return c
 
     def fromTS(self, ts):
-        return fromTS(ts, self.timezone)
+        return fromTS(ts, self.timezone, self._tz_aware)
+
+    def toTS(self, dt):
+        return toTS(dt)
 
     def get_data(self):
         raise NotImplementedError("reload not implemented")
@@ -377,7 +381,7 @@ class Animal(APIObject, DataMixin, EventMixin):
 
         all_lactations = []
         for lac in self.lactations:
-            all_lactations.append(lac.date.replace(hour=0, minute=0, second=0, microsecond=0))
+            all_lactations.append(pendulum.instance(lac.date.replace(hour=0, minute=0, second=0, microsecond=0)))
 
         lac_idx = 1
         while from_dt <= cdt:
