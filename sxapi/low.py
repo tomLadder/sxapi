@@ -215,9 +215,16 @@ class LowLevelPublicAPI(BaseAPI):
                         "from_date": from_date, "to_date": to_date})
         return self.get("/data/query", params=params)
 
-    def get_animal_events(self, animal_id, from_date=None, to_date=None, limit=100, offset=0):
-        params = HDict({"animal_id": animal_id, "limit": limit, "offset": offset,
-                        "from_date": None, "to_date":None})
+    def get_animal_events(self, animal_id, from_date=None, to_date=None,
+                          limit=100, offset=0):
+        if from_date:
+            from_date = int(from_date)
+        if to_date:
+            to_date = int(to_date)
+
+        params = HDict({"animal_id": animal_id, "limit": limit,
+                        "offset": offset, "from_date": from_date,
+                        "to_date": to_date})
         all_events = []
         while True:
             events = self.get("/event/query", params=params)
@@ -229,8 +236,13 @@ class LowLevelPublicAPI(BaseAPI):
         return all_events
 
     def get_device_events(self, device_id, from_date=None, to_date=None):
+        if from_date:
+            from_date = int(from_date)
+        if to_date:
+            to_date = int(to_date)
+
         params = HDict({"device_id": device_id, "limit": 100, "offset": 0,
-                        "from_date": None, "to_date":None})
+                        "from_date": from_date, "to_date": to_date})
         all_events = []
         while True:
             events = self.get("/event/query", params=params)
