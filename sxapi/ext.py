@@ -41,7 +41,6 @@ class FlaskSX(object):
         app.config.setdefault('SMAXTEC_API_KEY', None)
         app.config.setdefault('SMAXTEC_API_TZ_AWARE', True)
 
-
     @property
     def highlevel(self):
         """

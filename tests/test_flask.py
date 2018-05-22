@@ -14,7 +14,6 @@ class TestConfig(object):
     SMAXTEC_API_PRIVATE_ENDPOINT = "http://0.0.0.0:8787/internapi/v0"
 
 
-
 class FlaskTests(unittest.TestCase):
     def setUp(self):
         self.app = Flask(__name__)

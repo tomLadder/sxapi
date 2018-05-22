@@ -255,8 +255,8 @@ class LowLevelPublicAPI(BaseAPI):
 
     def get_events_by_organisation(self, organisation_id, from_date, to_date, categories=None):
         params = HDict({"organisation_id": organisation_id, "offset": 0, "limit": 100,
-                       "from_date": int(from_date), "to_date": int(to_date),
-                       "categories": categories})
+                        "from_date": int(from_date), "to_date": int(to_date),
+                        "categories": categories})
         all_res = []
         while True:
             res = self.get("/event/by_organisation", params=params)
@@ -269,7 +269,7 @@ class LowLevelPublicAPI(BaseAPI):
 
     def get_annotation_by_id(self, annotation_id):
         params = HDict({"annotation_id": annotation_id})
-        return self.get("/annotation/id", params= params)
+        return self.get("/annotation/id", params=params)
 
     def get_animal_annotations(self, animal_id, from_date, to_date):
         params = HDict({"to_date": to_date, "from_date": from_date, "limit": 100,
@@ -598,7 +598,7 @@ class LowLevelInternAPI(BaseAPI):
             "to_date": to_ts
         })
         return self.get("/anthilluploadbulk", params=params)
-    
+
     def get_animals_by_organisation(self, organisation_id):
         p = HDict({"organisation_id": organisation_id})
         res = self.get("/animallist", params=p)

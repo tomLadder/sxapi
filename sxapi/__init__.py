@@ -1,9 +1,6 @@
 #!/usr/bin/python
 # coding: utf8
 
-__version__ = '0.13'
-
-
 import time
 import logging
 import requests
@@ -13,11 +10,15 @@ from .low import LowLevelPublicAPI, LowLevelInternAPI
 from .models import User, Animal, Organisation, Annotation
 from .helper import fromTS, toTS
 
+__version__ = '0.13'
+
+
 class API(object):
     def __init__(self, email=None, password=None, api_key=None, endpoint=None, tz_aware=True):
         """Initialize a new API client instance.
         """
-        self.low = LowLevelPublicAPI(email=email, password=password, api_key=api_key, endpoint=endpoint, tz_aware=tz_aware)
+        self.low = LowLevelPublicAPI(email=email, password=password, api_key=api_key,
+                                     endpoint=endpoint, tz_aware=tz_aware)
 
     @property
     def status(self):
@@ -34,7 +35,7 @@ class API(object):
     @property
     def organisations(self):
         return [Organisation.create_from_data(api=self.low, data=x, _id=x["organisation_id"])
-            for x in self.low.get_organisations()]
+                for x in self.low.get_organisations()]
 
     def get_annotation(self, annotation_id):
         return Annotation(api=self.low, _id=annotation_id)
@@ -47,7 +48,8 @@ class API(object):
 
 
 class LowLevelAPI(object):
-    def __init__(self, email=None, password=None, private_endpoint=None, api_key=None, public_endpoint=None, tz_aware=True):
+    def __init__(self, email=None, password=None, private_endpoint=None, api_key=None,
+                 public_endpoint=None, tz_aware=True):
         """Initialize a new API client instance.
         """
         self.publiclow = LowLevelPublicAPI(email=email, password=password, api_key=api_key,
@@ -232,7 +234,6 @@ class LowLevelAPI(object):
     def searchDevices(self, search_string):
         return self.privatelow.search_devices(search_string)
 
-
     # Annotation Calls
 
     def get_annotation_by_id(self, annotation_id):
@@ -256,7 +257,6 @@ class LowLevelAPI(object):
 
     def update_annotation(self, annotation_id, ts=None, end_ts=None, classes=None, attributes=None):
         return self.publiclow.update_annotation(annotation_id, ts, end_ts, classes, attributes)
-
 
     # Organisation Calls
 
@@ -283,7 +283,7 @@ class LowLevelAPI(object):
     def create_hidden_share(self, organisation_id, user_id):
         return self.privatelow.create_hidden_share(organisation_id, user_id)
 
-    # Testset Calls 
+    # Testset Calls
 
     def insert_testset(self, name, meta_data, annotation_ids):
         return self.publiclow.insert_testset(name, meta_data, annotation_ids)

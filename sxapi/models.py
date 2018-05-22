@@ -104,10 +104,11 @@ class DataMixin(object):
             d.append(Sensordata(api=self.api, parent=self, metric=m,
                                 from_date=my_from, to_date=my_to).to_series().to_frame())
         return pd.concat(d, join="outer", axis=1)
-            # def get_frame(self, metrics, days_back=None):
-    #     frames = [self.get_series(x, days_back=days_back).to_frame(name=x) for x in metrics]
-    #     frame = pd.concat(frames, join="outer", axis=1)
-    #     return frame
+        # def get_frame(self, metrics, days_back=None):
+        #     frames = [self.get_series(x, days_back=days_back).to_frame(name=x) for x in metrics]
+        #     frame = pd.concat(frames, join="outer", axis=1)
+        #     return frame
+
 
 class EventMixin(object):
     DEFAULT_DAYS_BACK = 30
@@ -222,10 +223,12 @@ class Sensordata(object):
                          name=self.metric)
 
     def __str__(self):
-        return "<{}({}.{})>".format(self.__class__.__name__, getattr(self.parent, "_id", "unknown"), getattr(self, "metric", "unknown"))
+        return "<{}({}.{})>".format(self.__class__.__name__, getattr(self.parent, "_id", "unknown"),
+                                    getattr(self, "metric", "unknown"))
 
     def __repr__(self):
-        return "<{}({}.{})>".format(self.__class__.__name__, getattr(self.parent, "_id", "unknown"), getattr(self, "metric", "unknown"))
+        return "<{}({}.{})>".format(self.__class__.__name__, getattr(self.parent, "_id", "unknown"),
+                                    getattr(self, "metric", "unknown"))
 
     # def get_frame(self, metrics, days_back=None):
     #     frames = [self.get_series(x, days_back=days_back).to_frame(name=x) for x in metrics]
@@ -465,14 +468,16 @@ class Animal(APIObject, DataMixin, EventMixin):
     @property
     def heats(self):
         if not self._heats:
-            self._heats = [Heat.create_from_data(api=self.api, data=h, timezone=self.timezone) for h in self.data["heats"]]
+            self._heats = [Heat.create_from_data(api=self.api, data=h, timezone=self.timezone)
+                           for h in self.data["heats"]]
             self._heats.sort(key=lambda x: x.date)
         return self._heats
 
     @property
     def lactations(self):
         if not self._lactations:
-            self._lactations = [Lactation.create_from_data(api=self.api, data=h, timezone=self.timezone) for h in self.data["lactations"]]
+            self._lactations = [Lactation.create_from_data(api=self.api, data=h, timezone=self.timezone)
+                                for h in self.data["lactations"]]
             self._lactations.sort(key=lambda x: x.date)
         return self._lactations
 
