@@ -1,2 +1,4 @@
 requests
 pendulum
+pytest-cov
+pytest-pep8
